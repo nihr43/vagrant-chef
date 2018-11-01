@@ -1,0 +1,33 @@
+# -*- mode: ruby -*-
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "centos/7"
+  config.vm.network "private_network", ip: "10.0.0.101"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.gui = true
+    vb.memory = "512"
+    vb.cpus = "3"
+ end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    hostnamectl set-hostname `date "+%s" | md5sum | colrm 5`
+    mkdir /root/.ssh
+    yum update -y
+    yum install epel-release git vim wget -y
+    wget https://github.com/nihr43.keys
+    mv nihr43.keys /root/.ssh/authorized_keys
+
+    ########
+
+    cd /tmp
+    git clone https://github.com/nihr43/chef-bootstrap.git
+    cd ./chef-bootstrap
+    ./node.sh
+
+    ip ad | grep -o -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -v "\.255$"
+
+  SHELL
+
+end
